@@ -52,6 +52,7 @@ data CG = Chez
         | Gambit
         | Node
         | Javascript
+        | Jvm
         | Other String
 
 export
@@ -61,6 +62,7 @@ Eq CG where
   Gambit == Gambit = True
   Node == Node = True
   Javascript == Javascript = True
+  Jvm == Jvm = True
   Other s == Other t = s == t
   _ == _ = False
 
@@ -71,6 +73,7 @@ Show CG where
   show Gambit = "gambit"
   show Node = "node"
   show Javascript = "javascript"
+  show Jvm = "jvm"
   show (Other s) = s
 
 public export
@@ -160,6 +163,7 @@ availableCGs o
        ("racket", Racket),
        ("node", Node),
        ("javascript", Javascript),
+       ("jvm", Jvm),
        ("gambit", Gambit)] ++ additionalCGs o
 
 export
@@ -175,7 +179,7 @@ defaultPPrint = MkPPOpts False True False
 
 export
 defaultSession : Session
-defaultSession = MkSessionOpts False False False Chez [] 0
+defaultSession = MkSessionOpts False False False Jvm [] 0
                                False False Nothing Nothing
                                Nothing Nothing
 

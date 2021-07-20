@@ -8,6 +8,7 @@ module Network.Socket.Data
 import Data.List
 import Data.List1
 import Data.Strings
+import System.FFI
 
 -- ------------------------------------------------------------ [ Type Aliases ]
 
@@ -62,6 +63,7 @@ EAGAIN =
 
 -- repeat without export to avoid dependency cycles
 %foreign "C:idrnet_errno,libidris2_support"
+         jvm runtimeClass "getErrorNumber"
 idrnet_errno : PrimIO Int
 
 %foreign "C:isNull,libidris2_support"

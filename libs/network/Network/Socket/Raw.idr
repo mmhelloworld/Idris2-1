@@ -8,6 +8,7 @@ module Network.Socket.Raw
 import public Network.Socket.Data
 
 import Network.FFI
+import System.FFI
 
 -- ---------------------------------------------------------------- [ Pointers ]
 
@@ -23,6 +24,9 @@ data BufPtr = BPtr AnyPtr
 public export
 data SockaddrPtr = SAPtr AnyPtr
 
+idrisSocketClass : String
+idrisSocketClass = "io/github/mmhelloworld/idris2/runtime/IdrisSocket"
+
 -- ---------------------------------------------------------- [ Socket Utilies ]
 
 ||| Put a value in a buffer
@@ -35,10 +39,14 @@ export
 sock_peek : HasIO io => BufPtr -> Int -> io Int
 sock_peek (BPtr ptr) offset = primIO $ idrnet_peek ptr offset
 
+%foreign
+    jvm idrisSocketClass "free"
+prim_freeSocketPointer : AnyPtr -> PrimIO ()
+
 ||| Frees a given pointer
 export
 sock_free : HasIO io => BufPtr -> io ()
-sock_free (BPtr ptr) = primIO $ idrnet_free ptr
+sock_free (BPtr ptr) = primIO $ prim_freeSocketPointer ptr
 
 export
 sockaddr_free : HasIO io => SockaddrPtr -> io ()
@@ -56,17 +64,24 @@ export
 getSockPort : HasIO io => Socket -> io Port
 getSockPort sock = primIO $ idrnet_sockaddr_port $ descriptor sock
 
+%foreign
+    jvm' idrisSocketClass "getSocketAddressFamily" "java/lang/Object" "int"
+prim_getSocketFamily : AnyPtr -> PrimIO Int
+
+%foreign
+    jvm' idrisSocketClass "getSocketAddressHostName" "java/lang/Object" "java/lang/String"
+prim_getSocketAddressHostName : AnyPtr -> PrimIO String
 
 ||| Retrieves a socket address from a sockaddr pointer
 export
 getSockAddr : HasIO io => SockaddrPtr -> io SocketAddress
 getSockAddr (SAPtr ptr) = do
-  addr_family_int <- primIO $ idrnet_sockaddr_family ptr
+  addr_family_int <- primIO $ prim_getSocketFamily ptr
 
   -- ASSUMPTION: Foreign call returns a valid int
   assert_total (case getSocketFamily addr_family_int of
     Just AF_INET => do
-      ipv4_addr <- primIO $ idrnet_sockaddr_ipv4 ptr
+      ipv4_addr <- primIO $ prim_getSocketAddressHostName ptr
 
       pure $ parseIPv4 ipv4_addr
     Just AF_INET6 => pure IPv6Addr

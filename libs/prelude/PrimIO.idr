@@ -71,6 +71,12 @@ export
 %extern prim__schemeCall : (ret : Type) -> String -> (1 args : FArgList) ->
                            (1 x : %World) -> IORes ret
 
+export
+%extern prim__jvmInstance : (ret : Type) -> String -> (1 args : FArgList) -> (1 x : %World) -> IORes ret
+
+export
+%extern prim__jvmStatic : (ret : Type) -> String -> (1 args : FArgList) -> (1 x : %World) -> IORes ret
+
 export %inline
 fromPrim : (1 fn : (1 x : %World) -> IORes a) -> IO a
 fromPrim op = MkIO op
@@ -83,9 +89,17 @@ export %inline
 schemeCall : (ret : Type) -> String -> (1 args : FArgList) -> IO ret
 schemeCall ret fn args = fromPrim (prim__schemeCall ret fn args)
 
+export %inline
+jvmStatic : (ret : Type) -> String -> (1 args : FArgList) -> IO ret
+jvmStatic ret fn args = fromPrim (prim__jvmStatic ret fn args)
+
+export %inline
+jvmInstance : (ret : Type) -> String -> (1 args : FArgList) -> IO ret
+jvmInstance ret fn args = fromPrim (prim__jvmInstance ret fn args)
 
 %foreign "C:idris2_isNull, libidris2_support"
          "javascript:lambda:x=>x===undefined||x===null?1n:0n"
+         "jvm:isNull,io/github/mmhelloworld/idris2/runtime/Objects"
 export
 prim__nullAnyPtr : AnyPtr -> Int
 

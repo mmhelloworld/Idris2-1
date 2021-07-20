@@ -13,8 +13,17 @@ interface Random a where
   -- happens if lo > hi.
   randomRIO : HasIO io => (a, a) -> io a
 
-prim_randomInt : Int -> IO Int
-prim_randomInt upperBound = schemeCall Int "blodwen-random" [upperBound]
+%foreign "jvm:nextInt(int int),io/github/mmhelloworld/idris2/runtime/Random"
+prim_randomInt : Int -> PrimIO Int
+
+%foreign "jvm:nextDouble(double),io/github/mmhelloworld/idris2/runtime/Random"
+prim_randomDouble : PrimIO Double
+
+randomInt : Int -> IO Int
+randomInt bound = primIO (prim_randomInt bound)
+
+randomDouble : IO Double
+randomDouble = primIO prim_randomDouble
 
 public export
 Random Int where
@@ -23,28 +32,31 @@ Random Int where
     let maxInt = shiftL 1 31 - 1
         minInt = negate $ shiftL 1 31
         range = maxInt - minInt
-     in map (+ minInt) $ liftIO $ prim_randomInt range
+     in map (+ minInt) $ liftIO $ randomInt range
 
   -- Generate a random value within [lo, hi].
   randomRIO (lo, hi) =
     let range = hi - lo + 1
-     in map (+ lo) $ liftIO $ prim_randomInt range
-
-prim_randomDouble : IO Double
-prim_randomDouble = schemeCall Double "blodwen-random" []
+     in map (+ lo) $ liftIO $ randomInt range
 
 public export
 Random Double where
   -- Generate a random value within [0, 1].
-  randomIO = liftIO prim_randomDouble
+  randomIO = liftIO randomDouble
 
   -- Generate a random value within [lo, hi].
-  randomRIO (lo, hi) = map ((+ lo) . (* (hi - lo))) (liftIO prim_randomDouble)
+  randomRIO (lo, hi) = map ((+ lo) . (* (hi - lo))) (liftIO randomDouble)
+
+%foreign "jvm:setSeed(int void),io/github/mmhelloworld/idris2/runtime/Random"
+prim_setSeed : Int -> PrimIO ()
+
+setSeed : Int -> IO ()
+setSeed seed = primIO (prim_setSeed seed)
 
 ||| Sets the random seed
 export
 srand : Integer -> IO ()
-srand n = schemeCall () "blodwen-random-seed" [n]
+srand n = primIO (prim_setSeed $ cast n)
 
 ||| Generate a random number in Fin (S `k`)
 |||
